@@ -1,0 +1,158 @@
+---
+title: "API 1163 Sample Size Determination"
+author: "Center for Excellence in Risk Management"
+date: "8/21/2020"
+output: 
+ bookdown::html_document2: 
+  theme: journal
+  toc: true 
+  toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+## Introduction {-}
+
+In any type of sampling program it is a natural question to ask if enough samples have been taken to be able to discern the difference between the observations and some reference. This paper will discuss how to calculate a necessary sample size to be able to determine if the differences identified sampling program are significantly different than the specification or reference. In this context a sampling program can take the form of a material confirmations or ILI digs. Each measurement is a sample for this purpose.
+
+There will always differences between the what is measured and what the true value is since there is no such thing as an perfect measurement.  Errors of varying magnitude will exist due to random effects from any number of sources. The question that inevitably arises is whether these differences are significant and have enough samples been completed to be able to tell the difference. Often tools such as a unity chart is used but even API 1163 refers to these as a qualitative tool. The weakness of unity charts is that they are only a visual representation of what is already known, how many anomalies were within the tolerance limits and what the difference was. It can't tell you what the likelihood that the entire population is within specification.  Another scenario is when a series of replicate measurements are taken and because of the random errors inherent in any measuring process, there is scatter to the data even though there is only one true (but unknown) value for the sample, assuming the material property doesn't change significantly from one measurement to the next. Even the average might be off from the expected value. Questions that automatically come to mind is, how confident can one be in the observed results or have enough samples been taken to reasonably judge whether a standard has been met?
+
+To deal with the uncertainty built into any measuring process, it is necessary to delve into the mathematics of probability to make inferences about the remaining population that was not examined. Statistics allows the user to take information from a sample to make inferences about the population. 
+  
+## Terminology  
+Before proceeding further it is necessary to discuss a few terms in statistics that often get misused due to misunderstanding of what they represent. The one that is misused more than anything is Confidence Interval. The key thing to know about confidence intervals is that a 95% confidence interval *does not* infer that 95% of your measurements are likely to be within the bounds of it. A confidence interval is a statement about the precision of some parameter, typically the average/mean. Therefore, a 95% confidence interval of the mean indicates the expected range the true mean will fall in if the entire population was measured based on the information from the sample.
+  
+The second term is what is really meant often times when the term "Confidence Interval" is used. That is Probability Interval, the potential range of predicted values that can be expected for a single measurement. A prediction interval must account for the uncertainty in the mean plus the random variation of the data and because of this it will always be wider than the confidence interval. If a large enough sample is taken, the prediction interval will encompass 95% of the population within its range.
+
+## Sample Size {-}
+
+There are two categories of tests that are used for sampling. The first one is if the measure being used is some sort of go/no-go, pass/fail criteria where there are only two possible outcomes. The second category is if some sort of continuous value is collected such as yield strength or weight percent of some composition element. A continuous measure can take on an infinite number of values over some range and isn't limited to a pass/fail criteria. Each of these will be discussed in turn.
+  
+In the binary condition of the first testing criteria, the uncertainty in the test is not considered, only the proportion of pass/fail there is.
+
+If the concern is about the likely tool error for anything left in the ground then it is intuitive that the amount of this error is not constant and will vary from location to location. Because of this variation, the error is a distribution of probable error. This distribution will follow the Normal distribution which relies on a mean (average) and a standard deviation. In the this application it assumed that the average error is at or very near zero because the number of over and under calls will be be approximately the same. Because of the mean of zero (or very near), the problem of sample size becomes a question of the size of the likely standard deviation of the actual error relative to the tool tolerance specification. The standard deviation is a measure of the amount of "spread" or dispersion in a population.
+
+Doing a number of digs is in a sense, analogous to an experiment where someone is taking $N$ repeated measurements to obtain a estimate of the standard deviation $\hat{\sigma}$ known as the sample standard deviation. The problem is how to choose an appropriate $N$ in such a way that I am able to be confident that the difference between the observed standard deviation $\hat{\sigma}$ does not vary from the true standard deviation $\sigma$ by more than some factor. The term "factor" is a deliberate one because the pertinent statistical distribution relies on the ratio of $\frac{\hat{\sigma}}{\sigma}$ which $\sigma$ is the true standard deviation. This distribution is related to not the Normal but a skewed distribution known as the *chi-square distribution*, denoted by $\chi^2$. More specifically its based on the ratio of the sampled variance to the true variance and the degrees of freedom. The variance is simply the square of the standard deviation which is symbolized as, $\sigma^2$ and the degrees of freedom $n$ is the number of samples minus one $N-1$.
+
+## Example Calculation {-}
+
+The chi-square distribution is defined by the relationship of equation \@ref(eq:chi).
+
+```{=tex}
+\begin{equation}
+\frac{n\hat{\sigma}^2}{\sigma}
+ (\#eq:chi)
+\end{equation}
+```
+It can be shown that the ratio of $\frac{\hat{\sigma}}{\sigma}$ is contained with a level of probability equal to $\beta$, between the two quantities:  
+
+```{=tex}
+\begin{equation}
+\frac{\chi_1^2}{n}\; and \; \frac{\chi^2_2}{n}
+(\#eq:ratio)
+\end{equation}
+```
+
+Where: $\chi^2_{1,2}$ are the critical values for $n$ degrees of freedom. The challenge becomes that both the numerator and denominator of the ratio are dependent on the degrees of freedom in \@ref(eq:ratio). Therefore there is no way to solve this directly. In years past it would necessitate looking up critical $\chi^2$ values in a table and find the one that matches your ratio and reference the degrees of freedom associated with it. But since computing power is cheap and plentiful it is convenient to create a list of $\frac{\chi^2}{n}$ this can be done in Excel by setting up a column with incremental degrees of freedom and calculate the inverse chi-square divided by degrees of freedom. This can be done with the *= CHISQ.INV()* function using the chosen significance level and the degrees of freedom column that was created previously, then this result is divided by that same degrees of freedom. The function requires a level of significance that has to be chosen by the user. This represents the limits of the level of confidence that is desired. For instance if a 5% significance is chosen, that implies that the level of confidence desired is 90%, from the 5% to 95% levels of the population, i.e. there is a 5% chance or less that the ratio of variances is being more extreme than what was calculated. Since we are interested in both tails of the distribution, the significance level at both ends of the distribution, at 5% and 95%.
+
+In this example, a 95% confidence is desired so the level of significance would be $\frac{1-0.95}{2}=0.025$ for the lower end and $1-\frac{0.05}{2}=0.975$. In addition,it has been decided that a large enough sample needs to be taken such that you are able to estimate $\hat{\sigma}$ within 20% of the true value. Thus we require that:
+
+```{=tex}
+\begin{equation}
+1-0.20<\frac{\hat{\sigma}}{\sigma}< 1+0.20
+(\#eq:sdratio)
+\end{equation}
+```
+Or
+
+```{=tex}
+\begin{equation}
+  0.80<\frac{\hat{\sigma}}{\sigma}<1.20
+  (\#eq:sdratio2)
+  \end{equation}
+```
+Since the chi-square distribution is based on the ratio of variances the terms are all squared:
+
+```{=tex}
+\begin{equation}
+  0.64<\frac{\hat{\sigma^2}}{\sigma^2}<1.44
+  (\#eq:vratio)
+  \end{equation}
+```
+To solve this, someone could enter the formula *=CHISQ.INV(n, 0.025)/n* into Excel with $n$ being a cell with the degrees of freedom and then by trial and error, changing $n$ until the formula produces a value of *not less than* 0.64 or another approach could create a column that iterates $n$ up to some large number and copy that formula down. Then find the closest value that meets the criteria. When that value is located in the list, the $n$ associated with that value is the degrees of freedom and since $n = N-1$ the necessary sample size is $n+1$. This same process is repeated for the upper end with *=CHISQ.INV(n, 0.975)/n* to find the one that is *not greater than* 1.44. In this example it works out to be 49 to satisfy both conditions. This will not always be the case, if the two values differ then select the larger of the two.
+
+## Reverse Problem {.unnumbered}
+
+In many cases digging to achieve a statistically significant sample is not feasible. In that case, the problem can be approached from the opposite direction. What is my uncertainty in the standard deviation based on a given number of digs? This problem is much more tractable than the previous and can be solved directly. Once again the chi-square distribution will be used but in a different manner.
+
+If it were possible to take repeated samples of size $N$ and calculate the sample variance $\hat{\sigma^2}$ each time. Then the quantity $n\hat{\sigma^2}/{\sigma^2}$ has the chi-square distribution with $n$ degrees of freedom. Then we would write
+
+```{=tex}
+\begin{equation}
+\frac{n\hat{\sigma^2}}{\sigma^2}=\chi_n^2
+(\#eq:reverse)
+\end{equation}
+```
+Where $\chi^2_n$ is the critical value for $n$ degrees of freedom. This is best illustrated with an example calculation.
+
+## Sample Calculation for Reverse Problem {.unnumbered}
+
+Let's assume a sample of 15 digs were completed and a sample standard deviation of the error between the ILI call and the field measurements is 9% (0.09) and a 90% certainty level is desired. The two critical values for $\chi^2$ can be calculated for $N-1$ degrees of freedom using the Excel formula *=CHISQ.INV(14, 0.05)* & *=CHISQ.INV(14, 0.95)* which would give the values of 6.5706 and 23.6847. Using equation \@ref(eq:reverse) it can be inferred that the ratio of the variances is $\frac{\hat{\sigma^2}}{\sigma^2}=\frac{\chi^2_n}{n}$. Therefore the ratio of the variances will lie between 6.5706/14 and 23.6847/14 and thus variance ratio, $0.4693< \frac{\hat{\sigma^2}}{\sigma^2}<1.6918$. Knowing that the standard deviation is the square root of the variance nd rearranging the inequality you get $\hat{\sigma}/1.3007\;<\;\sigma\;<\;\hat{\sigma}/0.6851$. In the problem statement it was given that $\hat\sigma=0.09$ so the true standard deviation will be between 6.9% and 13.1% with a 90% probability.
+
+## Confidence Intervals, Confidence Levels and Tolerance Limits {.unnumbered}
+
+One of the most misused terms in statistics is "Confidence Interval". This is often incorrectly used in the context that it tells the user the limits of uncertainty for some measurement with a stated confidence. A confidence interval is a statement about the precision of some parameter, typically the mean. It is the plausible range for the parameter that will contain the true value with some chosen confidence level. To illustrate this, think of a very large population of something with some parameter of interest, such as the length or depth. Then you take a random sample from that population and calculate the confidence interval for that sample and then put the sample back and take another random sample and calculate a confidence interval again. This process is repeated potentially hundreds or thousands of times,each time calculating a confidence interval. As the number of samples increases, 95% of the confidence intervals will contain the true mean of the population. But a 95% confidence interval does not imply that 95% of the samples will be within the limits of the confidence interval. The interpretation of a 95% confidence interval would be that we are 95% confident that the true value lies between the upper and lower confidence interval.
+
+The confidence level is a chosen parameter based on the level of certainty desired. The larger the confidence level, the wider the confidence interval will be.
+
+The third item is the tolerance limits, this is a characteristic of the population and is often what is really being referred to when the term confidence interval is used. This is the expected limits (or interval) that a specified proportion of the population will lie with some confidence level. If the true mean and standard deviation of the population were known then the expected bounds would simply be the probability interval of the Normal distribution for the desired confidence level. However with the exception of the more trivial cases where the population is small and 100% can be examined, the inference is based on a sample of the population. Since only the mean and standard deviation of the sample is known and not the population, some level of uncertainty exists about the true value of the parameters. The following example will demonstrate how to calculate the tolerance limits.
+
+## Tolerance Limit Example {.unnumbered}
+
+In this example, the desired confidence level ($\alpha$) is 95% that 80% ($p$) of the anomalies will be within the tolerance limits. After examining a sample of 20 anomaly depths, a standard deviation of 9% ($\hat{\sigma}$) and a mean of - 1% ($\bar{x}$) (Undercalls being negative) of the difference between what was reported by the ILI tool and what was found were calculated. The tolerance limits based on this sample is calculated as follows:
+
+```{=tex}
+\begin{equation}
+X_{L,U} = \bar{x}\pm k_2\hat{\sigma}
+(\#eq:tolerance)
+\end{equation}
+```
+
+And:
+```{=tex}
+\begin{equation}
+k_2 = z_{\frac{1+p}{2}}\sqrt{ \frac{n\left(1+\frac{1}{N}\right)}{\chi^2_{1-\alpha,n}}}
+(\#eq:kfactor)
+\end{equation}
+```
+  
+Where:
+$X_{L,U}$ = the Lower and Upper Tolerance Limit respectively  
+$z_{\frac{1+p}{2}}$ = The critical value of the Normal Distribution for a probability of $\frac{1+p}{2}$. For p = 0.80, z = 1.28   
+$N$ = Sample Size  
+$n$ = Degrees of Freedom = $N-1$  
+$\chi^2$ = Critical Chi-Square value as discussed above, for $n = 19$ and $1-\alpha = 0.05$, $\chi^2 = 10.12$  
+  
+Typically the amount of potential undercall for any unexamined anomalies is of the greatest consequence and the lower limit of the tolerance interval would be of the most interest. But for the sake of demonstration, the upper and lower limits are calculated.
+  
+```{=tex}
+\begin{equation}
+k_2 = 1.28\sqrt{ \frac{19\left(1+\frac{1}{20}\right)}{10.12}} = 1.80  
+(\#eq:kfactorex)
+\end{equation}
+```
+
+The tolerance limits would be as follows:  
+
+```{=tex}
+\begin{equation}
+X_L = -0.01- (1.80)(0.09) = -17\% \hspace{12pt} and \hspace{12pt}  X_U = -0.01+ (1.80)(0.09) = 15\%
+(\#eq:tolerancex)
+\end{equation}
+```
+
+## Conclusion {.unnumbered}
+
+Sample size and the uncertainty based on a fixed sample size can easily be computed using a spreadsheet or any statistical software. It should be cautioned that the larger the level of certainty to be attained or the smaller the deviation from the true standard deviation that is being attempting to discern, the larger the required sample will be. This number can exceed several hundred for the extremes of the two inputs. Total certainty and zero risk does not exist when dealing with sample statistics therefore the engineer should decide what is the greatest amount uncertainty that can be accepted that will lead to an acceptable risk level for an ILI run. But using the lower tolerance limits and the as-called dimensions it is now possible to calculate the probable lower end of predicted failure pressure and then make an informed decision if that is acceptable.
