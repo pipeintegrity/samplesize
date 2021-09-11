@@ -1,5 +1,5 @@
 
-# repeated sampling from a populaiton -------------------------------------
+# repeated sampling from a population -------------------------------------
 library(tidyverse)
 library(pwr)
 
@@ -8,17 +8,29 @@ nsamps <- 5000 # number of samples we will take
 
 adult = tibble(height =rnorm(10000,169,7.5))
 
+# idx <- 1:nsamps
 
-# set up variable to store all of the results
-sampMeans <- tibble(meanHeight=rep(NA,nsamps))
+adult_samp <- tibble(samp = replicate(nsamps,
+                                      slice_sample(adult, n = sampSize),
+                                      simplify = F)) %>%
+  bind_cols(idx = 1:nsamps)
 
-# Loop through and repeatedly sample and compute the mean
-for (i in 1:nsamps) {
-  sampMeans$meanHeight[i] <- adult %>%
-    sample_n(sampSize,replace = T) %>%
-    summarize(meanHeight=mean(height)) %>%
-    pull(meanHeight)
-}
+boots <- unnest(adult_samp,cols = samp) %>%
+  group_by(idx) %>%
+  summarise(mh=mean(height))
+
+
+
+# # set up variable to store all of the results
+# sampMeans <- tibble(meanHeight=rep(NA,nsamps))
+#
+# # Loop through and repeatedly sample and compute the mean
+# for (i in 1:nsamps) {
+#   sampMeans$meanHeight[i] <- adult %>%
+#     sample_n(sampSize,replace = T) %>%
+#     summarize(meanHeight=mean(height)) %>%
+#     pull(meanHeight)
+# }
 
 
 # plot results ------------------------------------------------------------
@@ -28,8 +40,8 @@ for (i in 1:nsamps) {
 # distribution.
 
 # pipe the sampMeans data frame into ggplot
-sampMeans %>%
-  ggplot(aes(meanHeight)) +
+boots %>%
+  ggplot(aes(mh)) +
   # create histogram using density rather than count
   geom_histogram(
     aes(y = ..density..),
@@ -87,7 +99,7 @@ glimpse(input_df)
 # create a function get the power value and
 # return as a tibble
 get_power <- function(df){
-  power_result <- pwr.p.test(n=df$sample_sizes,
+  power_result <- pwr.t.test(n=df$sample_sizes,
                              d=df$effect_sizes,
                              type='two.sample')
   df$power=power_result$power

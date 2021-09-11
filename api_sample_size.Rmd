@@ -4,6 +4,7 @@ author: "Center for Excellence in Risk Management"
 date: "8/21/2020"
 output: 
  bookdown::html_document2: 
+  number_sections: false
   theme: journal
   toc: true 
   toc_float: true
@@ -13,38 +14,135 @@ output:
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-## Introduction {-}
+## Introduction 
+In any type of sampling program it is a natural question to ask if enough samples have been taken to be able to discern the difference between the observations and some reference. This paper will discuss how to calculate a necessary sample size to be able to determine if the differences identified in the sampling program are significantly different than the specification or reference. In this context a sampling program can take the form of a material property confirmations or ILI digs to verify anomalies. Each property confirmation or anomaly measurement is a sample for this purpose.
 
-In any type of sampling program it is a natural question to ask if enough samples have been taken to be able to discern the difference between the observations and some reference. This paper will discuss how to calculate a necessary sample size to be able to determine if the differences identified sampling program are significantly different than the specification or reference. In this context a sampling program can take the form of a material confirmations or ILI digs. Each measurement is a sample for this purpose.
+Differences will always exist between the measured value and the true value since there is no such thing as an perfect measurement. Errors of varying magnitude will exist due to random effects from any number of sources, both human and equipment related. The t inevitable question arises is whether these observed differences are enough to be significant and have enough samples been completed to be able to tell the difference. Often tools such as a unity charts are used but even API 1163 refers to these as a qualitative tool. The weakness of unity charts is that they are only a visual representation of what is already known, how many anomalies were within the tolerance limits and what the difference was. It can't tell you what the likelihood that the entire population is within specification. Another scenario is when a series of replicate measurements are taken and because of the random errors inherent in any measuring process, there is scatter to the data even though there is only one true (but unknown) value for the sample, assuming the material property doesn't change from one measurement to the next. Even the average might be off from the expected value. If there is measurement uncertainty how confident can one be in the observed results are representative of reality and have enough samples been taken to reasonably judge whether a standard has been met?
 
-There will always differences between the what is measured and what the true value is since there is no such thing as an perfect measurement.  Errors of varying magnitude will exist due to random effects from any number of sources. The question that inevitably arises is whether these differences are significant and have enough samples been completed to be able to tell the difference. Often tools such as a unity chart is used but even API 1163 refers to these as a qualitative tool. The weakness of unity charts is that they are only a visual representation of what is already known, how many anomalies were within the tolerance limits and what the difference was. It can't tell you what the likelihood that the entire population is within specification.  Another scenario is when a series of replicate measurements are taken and because of the random errors inherent in any measuring process, there is scatter to the data even though there is only one true (but unknown) value for the sample, assuming the material property doesn't change significantly from one measurement to the next. Even the average might be off from the expected value. Questions that automatically come to mind is, how confident can one be in the observed results or have enough samples been taken to reasonably judge whether a standard has been met?
+To deal with the uncertainty built into any measuring process and sample variation, it is necessary to delve into the mathematics of probability to make inferences about the remaining population that was not examined. Statistics allows the user to take information from a sample to make inferences about the population.
 
-To deal with the uncertainty built into any measuring process, it is necessary to delve into the mathematics of probability to make inferences about the remaining population that was not examined. Statistics allows the user to take information from a sample to make inferences about the population. 
-  
-## Terminology  
-Before proceeding further it is necessary to discuss a few terms in statistics that often get misused due to misunderstanding of what they represent. The one that is misused more than anything is Confidence Interval. The key thing to know about confidence intervals is that a 95% confidence interval *does not* infer that 95% of your measurements are likely to be within the bounds of it. A confidence interval is a statement about the precision of some parameter, typically the average/mean. Therefore, a 95% confidence interval of the mean indicates the expected range the true mean will fall in if the entire population was measured based on the information from the sample.
-  
-The second term is what is really meant often times when the term "Confidence Interval" is used. That is Probability Interval, the potential range of predicted values that can be expected for a single measurement. A prediction interval must account for the uncertainty in the mean plus the random variation of the data and because of this it will always be wider than the confidence interval. If a large enough sample is taken, the prediction interval will encompass 95% of the population within its range.
+## Statistical Tests and Errors 
 
-## Sample Size {-}
+A sampling program is in essence a statistical test. In any statistical test there are two types of errors possible. They are known as Type 1 ($\alpha$) and Type 2 ($\beta$) errors. But the meaning of the two are often confused, both when setting up a testing program and when the results are interpreted. To help in the understanding of the implications, this paper will discuss the two types of error, what they mean. Also what will be discussed is how to set up a testing program and when to decide if the differences in the samples are significant.
 
-There are two categories of tests that are used for sampling. The first one is if the measure being used is a go/no-go, pass/fail criteria where there are only two possible outcomes. The second category is if a continuous value is collected such as yield strength or weight percent of some composition element. A continuous measure can take on an infinite number of values over some range and isn't limited to a pass/fail criteria. Each of these will be discussed in turn.
-  
-In the binary condition of the first criteria, the uncertainty in the test is not considered, only whether the sample is a pass or fail. In this type of test, the goal is to determine what proportion of the population is in one category or the other. This type of testing follows a binomial distribution which is used to calculate the likelihood of having *x* successes in *n* trials if the probability of success for each trial is *p*. In this context a "success" is whatever is being counted, so if the metric that is of interest is the number of samples that will likely fail then *p* is the proportion of the population that is assumed will fail and *x* is the number of samples that failed.
-  
-One of the principles of sampling is that the larger the sample the more faithful to the population it is. Intuitively, if only a couple samples are taken, the observed results might have happened purely due to chance and the population could be substantially different than the sample results. The opposite is also true that if I take a very large sample the less likely the observed results are due to chance and the sample probably reflects the population. For example if a test was set up to determine if an unknown coin was fair, (equal chance of heads or tails) that only involved taking two samples (two flips). If both samples both came up heads and the hypothesis was rejected that the coin was fair, this would creates significant doubt in the findings since the coin was only flipped twice. If on the other hand if you flipped the coin several thousand times, the sample would definitely be representative of the population but the amount of time and effort were probably disproportionate to the amount of information gained after a few hundred flips.
+In most cases, the desired result is to test whether the results from the sample data are different enough from a given reference or standard or between two samples that it is considered statistically significant. An example of this would be if a several wall thickness measurements are taken and the average is different than the assumed nominal wall thickness. A statistical test would be able to determine if the differences are enough to consider whether it was plausible that the sample could have came from a population with a mean equal to the nominal wall thickness. 
 
-The balance between these two extremes is where sample size determination comes in. If the cost of samples are of little consequence then more data can always be collected with little cost or effort. But in circumstances where a single sample might cost tens or hundreds of thousands of dollars it is critical to get the sample size right.
+In a Null Hypothesis Statistical Test (NHST) there are two possible outcomes. Either the Null Hypothesis (Null) which is your conjecture that you are attempting to disprove or not, (e.g. The mean of Sample A does not significantly differ from Sample B) is rejected or it is not rejected. It is not possible to accept the Null, it is either rejected or not rejected. The reason for this is that true value is unknown since only sample of the population was taken and accepting the Null would require proving an infinite number of alternatives are not possible, i.e. prove an infinite number of negatives. An NHST is similar to a criminal trial where the defendant is pronounced guilty or not guilty, but is never pronounced innocent.
+
+## Discussion of Error Types 
+
+A Type 1 error is rejecting the Null when it is really true, remembering that the true value is unknown in most real world cases (except in a contrived examples) but we can calculate the likelihood of falsely rejecting the Null. A Type 2 error is failing to reject the Null when it is false, meaning you didn't reject the Null when you should have. The plot in figure \@ref(fig:type12) shows a Type 1 and 2 error. The darker shaded region is the error bounds for $\alpha$ and $\beta$ respectively. For instance, if a testing program is set up and it is decided that if the mean is equal or exceeds the value where the darker shaded ares begins that the the Null $H_0$ is rejected in favor of the alternate hypothesis $H_1$. It can be seen that there is still some possibility that the sample could have came from the Null because the distribution continues on. The potential Type 1 error would be the darker blue area under the curve. If at that same decision point, it was decided to not reject the Null that was false then the potential Type 2 error would be darker orange area.
   
 
+```{r type12, fig.cap="Type 1 & 2 Errors"}
+
+library(tidyverse)
+library(patchwork)
+
+label1 <- c("H[0]","H[1]")
+
+DF <- data.frame (x=seq(-3,5,length.out = 301))
+
+typeI <- ggplot(DF, aes(x)) +
+  stat_function(
+    fun = dnorm,
+    geom = "area",
+    fill = "steelblue",
+    alpha = .3,
+    n=301
+  ) +
+  stat_function(
+    fun = dnorm,
+    geom = "area",
+    fill = "steelblue",
+    xlim = c(qnorm(.95), 4)
+  ) +
+  stat_function(
+    fun = dnorm,
+    geom = "line",
+    linetype = 2,
+    col = "black",
+    alpha = .5,
+    args = list(
+      mean = 2
+    ),
+    n=301
+  ) +
+  labs(
+    title = "Type I Error",
+    x = "z-score",
+    y = "Density",
+    caption = "Type I = Reject Null When it is True"
+  ) +
+  scale_x_continuous(limits = c(-3, 5))+
+  annotate(geom = "text", x=0, y=0.3, label=deparse(bquote(H[0])), parse=T, size=5)+
+  annotate(geom = "text", x=2, y=0.3, label=deparse(bquote(H[1])), parse=T, size=5)
+
+typeII <- ggplot(DF, aes(x)) +
+  stat_function(
+    fun = dnorm,
+    geom = "line",
+    linetype = 2,
+    n=301
+  ) +
+  stat_function(
+    fun = dnorm,
+    geom = "area",
+    fill = "orange",
+    args = list(
+      mean = 2
+    ),
+    xlim = c(-2, qnorm(.95)),
+    n=301
+  ) +
+  stat_function(
+    fun = dnorm,
+    geom = "area",
+    linetype = 2,
+    fill = "orange",
+    alpha = .3,
+    args = list(
+      mean = 2
+    ),
+    n=301
+  ) +
+  labs(
+    title = "Type II Error",
+    x = "z-score",
+    y = "Density",
+    caption = "Type II = Failure to Reject Null When it is False"
+  ) +
+  scale_x_continuous(limits = c(-3, 5))+
+  annotate(geom = "text",
+           x=2, 
+           y=0.3, 
+           label=deparse(bquote(H[1])), parse=T, size=5)+
+  annotate(geom = "text", 
+           x=0, 
+           y=0.3, 
+           label=deparse(bquote(H[0])), parse=T, size=5)
+
+typeI + typeII +
+  plot_annotation(title = "Type I and Type II Error Visualization")
+
+```
+## Sample Size 
+
+There are two categories of tests that are used for sampling. The first one is if the test being used is a go/no-go, pass/fail criteria where there are only two possible outcomes. The second category is when a continuous value is measured such as yield strength or weight of some object. A continuous measure can take on an infinite number of values over some range and isn't limited to a pass/fail criteria. Each of these will be discussed in turn.
+
+In the binary condition of the first criteria, the uncertainty in the test is not considered, only whether the sample is a pass or fail. In this type of test, the goal is to determine what proportion of the population is in one category or the other. This type of testing follows a binomial distribution which is used to calculate the likelihood of having *x* successes in *n* trials if the probability of success for each trial is *p*. In this context a "success" is whatever is being counted, so if the metric of interest is the number of samples that will likely fail then *p* is the proportion of the population that is hypothesized will fail or the maximum proportion allowed by some specification and *x* is the number of samples that did fail. In this context,"fail" does not mean that something physically failed but rather did not pass some test.
+
+One of the principles of sampling is that the larger the sample the more faithful to the population it is. Intuitively, if only a couple samples are taken, the observed results might have happened purely due to chance and the population could be substantially different than the sample results. The opposite is also true, that if a very large sample is taken, the less likely the observed results are due to chance and the more likely the sample reflects the population. For example if a test was set up to determine if an unknown coin was fair, (equal chance of heads or tails) that only involved taking two samples (two flips). If both samples both came up heads and the experimenter rejects that the coin was fair, this would create significant doubt in the findings given the coin was only flipped twice.  It is easily understood that these results could be purely due to chance. If on the other hand the coin is flipped several thousand times, the sample would definitely be representative of true proportion of heads to tails but the amount of time and effort were probably disproportionate to the amount of information gained after about fifty to a hundred flips.
+
+The balance between these two extremes is where sample size determination comes in. If the cost of samples are of little consequence in terms of time or money, then more data can always be collected with minimal outlay. But in circumstances where a single sample might cost tens or hundreds of thousands of dollars and several weeks to collect, it is critical to determine the appropriate sample size to meet the goals of the sampling program and budget or schedule constraints.
 
 So how many samples are required to show that something is significantly different from a reference proportion?
 
-If the concern is about the likely tool error for anything left in the ground then it is intuitive that the amount of this error is not constant and will vary from location to location. Because of this variation, the error is a distribution of probable error. This distribution will follow the Normal distribution which relies on a mean (average) and a standard deviation. In the this application it assumed that the average error is at or very near zero because the number of over and under calls will be be approximately the same. Because of the mean of zero (or very near), the problem of sample size becomes a question of the size of the likely standard deviation of the actual error relative to the tool tolerance specification. The standard deviation is a measure of the amount of "spread" or dispersion in a population.
+If the concern is about the likely tool error for anything left in the ground then it is important to understand that the amount of this error is not constant and will vary from location to location and even anomaly to anomaly at a given location. Because of this variation, the error is a distribution of probable error. This distribution will follow the Normal distribution which relies on a mean (average) and a standard deviation. In the this application it assumed that the average error is at or very near zero because the number of over and under calls will be be approximately the same. Because of the mean of zero (or very near), the problem of sample size becomes a question of the size of the likely standard deviation of the actual error relative to the tool tolerance specification. The standard deviation is a measure of the amount of "spread" or dispersion in a population.
 
-Doing a number of digs is in a sense, analogous to an experiment where someone is taking $N$ repeated measurements to obtain a estimate of the standard deviation $\hat{\sigma}$ known as the sample standard deviation. The problem is how to choose an appropriate $N$ in such a way that I am able to be confident that the difference between the observed standard deviation $\hat{\sigma}$ does not vary from the true standard deviation $\sigma$ by more than some factor. The term "factor" is a deliberate one because the pertinent statistical distribution relies on the ratio of $\frac{\hat{\sigma}}{\sigma}$ which $\sigma$ is the true standard deviation. This distribution is related to not the Normal but a skewed distribution known as the *chi-square distribution*, denoted by $\chi^2$. More specifically its based on the ratio of the sampled variance to the true variance and the degrees of freedom. The variance is simply the square of the standard deviation which is symbolized as, $\sigma^2$ and the degrees of freedom $n$ is the number of samples minus one $N-1$.
+Doing a number of digs is in a sense, analogous to an experiment where someone is taking $N$ repeated measurements to obtain a estimate of the standard deviation $\hat{\sigma}$ known as the sample standard deviation. The problem is how to choose an appropriate $N$ in such a way that I am able to be confident that the difference between the observed standard deviation $\hat{\sigma}$ does not vary from the true standard deviation $\sigma$ by more than some factor. The term "factor" is a deliberate one because the pertinent statistical distribution relies on the ratio of $\frac{\hat{\sigma}}{\sigma}$ which $\sigma$ is the true standard deviation. This distribution is related to not the Normal but a skewed distribution known as the *chi-square distribution*, denoted by $\chi^2$. More specifically its based on the ratio of the sampled variance to the true variance and the degrees of freedom. The variance is simply the square of the standard deviation, $\sigma^2$ and the degrees of freedom $n$ is the number of samples minus one $N-1$.
 
-## Example Calculation {-}
+## Example Calculation 
 
 The chi-square distribution is defined by the relationship of equation \@ref(eq:chi).
 
@@ -54,7 +152,7 @@ The chi-square distribution is defined by the relationship of equation \@ref(eq:
  (\#eq:chi)
 \end{equation}
 ```
-It can be shown that the ratio of $\frac{\hat{\sigma}}{\sigma}$ is contained with a level of probability equal to $\beta$, between the two quantities:  
+It can be shown that the ratio of $\frac{\hat{\sigma}}{\sigma}$ is contained with a level of probability equal to $\beta$, between the two quantities:\
 
 ```{=tex}
 \begin{equation}
@@ -62,7 +160,6 @@ It can be shown that the ratio of $\frac{\hat{\sigma}}{\sigma}$ is contained wit
 (\#eq:ratio)
 \end{equation}
 ```
-
 Where: $\chi^2_{1,2}$ are the critical values for $n$ degrees of freedom. The challenge becomes that both the numerator and denominator of the ratio are dependent on the degrees of freedom in \@ref(eq:ratio). Therefore there is no way to solve this directly. In years past it would necessitate looking up critical $\chi^2$ values in a table and find the one that matches your ratio and reference the degrees of freedom associated with it. But since computing power is cheap and plentiful it is convenient to create a list of $\frac{\chi^2}{n}$ this can be done in Excel by setting up a column with incremental degrees of freedom and calculate the inverse chi-square divided by degrees of freedom. This can be done with the *= CHISQ.INV()* function using the chosen significance level and the degrees of freedom column that was created previously, then this result is divided by that same degrees of freedom. The function requires a level of significance that has to be chosen by the user. This represents the limits of the level of confidence that is desired. For instance if a 5% significance is chosen, that implies that the level of confidence desired is 90%, from the 5% to 95% levels of the population, i.e. there is a 5% chance or less that the ratio of variances is being more extreme than what was calculated. Since we are interested in both tails of the distribution, the significance level at both ends of the distribution, at 5% and 95%.
 
 In this example, a 95% confidence is desired so the level of significance would be $\frac{1-0.95}{2}=0.025$ for the lower end and $1-\frac{0.05}{2}=0.975$. In addition,it has been decided that a large enough sample needs to be taken such that you are able to estimate $\hat{\sigma}$ within 20% of the true value. Thus we require that:
@@ -127,32 +224,29 @@ X_{L,U} = \bar{x}\pm k_2\hat{\sigma}
 (\#eq:tolerance)
 \end{equation}
 ```
-
 And:
+
 ```{=tex}
 \begin{equation}
 k_2 = z_{\frac{1+p}{2}}\sqrt{ \frac{n\left(1+\frac{1}{N}\right)}{\chi^2_{1-\alpha,n}}}
 (\#eq:kfactor)
 \end{equation}
 ```
-  
-Where:
-$X_{L,U}$ = the Lower and Upper Tolerance Limit respectively  
-$z_{\frac{1+p}{2}}$ = The critical value of the Normal Distribution for a probability of $\frac{1+p}{2}$. For p = 0.80, z = 1.28   
-$N$ = Sample Size  
-$n$ = Degrees of Freedom = $N-1$  
-$\chi^2$ = Critical Chi-Square value as discussed above, for $n = 19$ and $1-\alpha = 0.05$, $\chi^2 = 10.12$  
-  
+Where: $X_{L,U}$ = the Lower and Upper Tolerance Limit respectively\
+$z_{\frac{1+p}{2}}$ = The critical value of the Normal Distribution for a probability of $\frac{1+p}{2}$. For p = 0.80, z = 1.28\
+$N$ = Sample Size\
+$n$ = Degrees of Freedom = $N-1$\
+$\chi^2$ = Critical Chi-Square value as discussed above, for $n = 19$ and $1-\alpha = 0.05$, $\chi^2 = 10.12$
+
 Typically the amount of potential undercall for any unexamined anomalies is of the greatest consequence and the lower limit of the tolerance interval would be of the most interest. But for the sake of demonstration, the upper and lower limits are calculated.
-  
+
 ```{=tex}
 \begin{equation}
 k_2 = 1.28\sqrt{ \frac{19\left(1+\frac{1}{20}\right)}{10.12}} = 1.80  
 (\#eq:kfactorex)
 \end{equation}
 ```
-
-The tolerance limits would be as follows:  
+The tolerance limits would be as follows:
 
 ```{=tex}
 \begin{equation}
@@ -160,7 +254,6 @@ X_L = -0.01- (1.80)(0.09) = -17\% \hspace{12pt} and \hspace{12pt}  X_U = -0.01+ 
 (\#eq:tolerancex)
 \end{equation}
 ```
-
 ## Conclusion {.unnumbered}
 
 Sample size and the uncertainty based on a fixed sample size can easily be computed using a spreadsheet or any statistical software. It should be cautioned that the larger the level of certainty to be attained or the smaller the deviation from the true standard deviation that is being attempting to discern, the larger the required sample will be. This number can exceed several hundred for the extremes of the two inputs. Total certainty and zero risk does not exist when dealing with sample statistics therefore the engineer should decide what is the greatest amount uncertainty that can be accepted that will lead to an acceptable risk level for an ILI run. But using the lower tolerance limits and the as-called dimensions it is now possible to calculate the probable lower end of predicted failure pressure and then make an informed decision if that is acceptable.
