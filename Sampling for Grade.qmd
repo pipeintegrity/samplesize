@@ -1,0 +1,164 @@
+---
+title: "Sampling Yield Strength for Grade"
+author: "Joel Anderson"
+format: html
+date: "`r format(Sys.time(), '%B %d, %Y')`" 
+editor: visual
+chunk_output_type: console
+execute:
+  echo: false
+  warning: false
+  fig-width: 9
+  fig-height: 6
+  dpi: 300
+---
+
+## Yield Strength Distribution
+
+A histogram of over 2700 yield strengths (YS) from known X52 pipes. The distribution is heavily skewed right with a mean much greater than 52 ksi. An asymmetrical skewed distribution like this is suitable for an extreme value distribution.
+
+```{r}
+#| label: fig-yshisto
+#| fig-cap: "Histogram of Known Yield Strengths for X52"
+#| dpi: 300
+
+library(tidyverse)
+library(infer)
+library(evd)
+
+theme_set(theme_bw(16))
+
+fiveL <- read_csv("C:\\Users\\Joel\\OneDrive - RSI Pipeline Solutions\\ChemistryGrade\\Grade_Model\\5L_min_max_ys.csv") %>% 
+  filter(grade=="X52")
+
+
+chem <- read_csv("C:\\Users\\Joel\\OneDrive - RSI Pipeline Solutions\\Moodys\\data\\all_data.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(grade))
+
+x52 <- chem %>%
+  filter(grade == "X52", ys > 51)
+
+pars2 <- evd::fgev(x52$ys)
+
+x52 %>%
+  ggplot(aes(ys)) +
+  geom_histogram(
+    aes(y = after_stat(density)),
+    fill = 'indianred',
+    col = 'black',
+    bins = 27
+  ) +
+  geom_linerange(
+    aes(
+      ymin = 0,
+      ymax = 0.1,
+      x = fiveL$min / 1e3
+    ),
+    col = 'grey',
+    alpha = 0.5,
+    linewidth = 0.8,
+    lty = 2
+  ) +
+  geom_linerange(
+    aes(
+      ymin = 0,
+      ymax = 0.1,
+      x = fiveL$max / 1e3
+    ),
+    col = 'grey',
+    alpha = 0.5,
+    linewidth = 0.8,
+    lty = 2
+  ) +
+  geom_errorbarh(
+    aes(
+      y = 0.10,
+      xmin = fiveL$min / 1e3,
+      xmax = fiveL$max / 1e3
+    ),
+    height = 0.0125,
+    linewidth = 1.0
+  ) +
+  labs(x = "Yield Strength (ksi)") +
+  stat_function(
+    fun = dgev,
+    args = list(pars2$estimate[[1]],
+                pars2$estimate[[2]],
+                pars2$estimate[[3]]),
+    col = 'blue',
+    linewidth = 1.2,
+    n = 201
+  ) +
+  annotate(
+    "text",
+    x = 65,
+    y = 0.1,
+    label = "API 5L Range",
+    vjust = -0.5,
+    size =5
+  )+
+  scale_x_continuous(breaks = scales::pretty_breaks())
+
+
+
+```
+
+## Sampling from a Distribution
+
+In any sampling process, the mean of the sample will not always correspond to the mean of the population. Depending on where the sample is drawn from, the mean is going to vary considerably. To demonstrate this behavior, a random sample of 10 data points was drawn from the distribution shown in @fig-yshisto then the mean and standard deviation was calculated. This process was repeated 10,000 times to show how then mean can change sample to sample. Observe that though the population is a skewed distribution, the distribution of mean YS is very symmetrical. This is because of the Central Limit Theorem which establishes that the means for independent samples drawn from a population, the distribution will tend towards normal regardless of distribution of the population that they are drawn from. Also, the law of large numbers indicates that, as the number of random samples increase, the sample averages will converge almost surely to the mean of the population and the Central Limit Theorem says that the distribution of these samples will converge to a normal distribution. Both of these held true here as the samples show an excellent fit to a normal distribution and the expected value of the sample means is the same as the population at 59.8 ksi.
+
+```{r}
+#| label: fig-histo_sample
+#| fig-cap: "Mean of YS samples"
+#| dpi: 300
+#| cache: true
+
+set.seed(42)
+
+ns <- 1e4
+
+n <- 10
+
+
+rys <-
+  tibble(ys = rgev(ns * 10,
+                   pars2$estimate[[1]],
+                   pars2$estimate[[2]],
+                   pars2$estimate[[3]]))
+
+sam <- rep_sample_n(rys,size = n,replace = FALSE,reps = ns)
+
+sumsamp <- sam %>% 
+  group_by(replicate) %>% 
+  summarise(mys = mean(ys), sdys =sd(ys)) 
+
+mys_sum <- mean(sumsamp$mys)
+sdys_sum <- sd(sumsamp$mys)
+
+sumsamp %>%
+  ggplot(aes(mys)) +
+  geom_histogram(
+    aes(y =
+      after_stat(density)),
+      fill = 'steelblue2',
+      col = 'black'
+    ) +
+      stat_function(
+        fun = dnorm,
+        args = list(mys_sum, sdys_sum),
+        col = 'red',
+        linewidth = 1.2,
+        n = 201
+      ) +
+      scale_x_continuous(breaks = scales::pretty_breaks()
+      )+
+  labs(x = "Mean Yield Strength (ksi)",
+       y = NULL)+
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+```
+
+## Implications
+
+This exercise was more than academic. The purpose is to demonstrate how much variability there can be in sampling and the uncertainty in trying to determine grade based solely on YS. There are two things that make that difficult; one, the typical YS for a grade is going to be about 15% above its specified minimum and variability in the sample can lead to erroneous decisions. In this case though the population is known to be X52, 50% of the sample exceed the minimum YS for a X60.
