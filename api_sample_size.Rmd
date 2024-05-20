@@ -1,26 +1,122 @@
 ---
 title: "API 1163 Sample Size Determination"
-author: "Center for Excellence in Risk Management"
-date: "8/21/2020"
+author: "RSI Pipeline Solutions"
+date: "`r format(Sys.time(), '%B %d, %Y')`" 
 output: 
  bookdown::html_document2: 
   number_sections: false
   theme: journal
   toc: true 
-  toc_float: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
 ```
 
 ## Introduction
 
-In any type of sampling program it is a natural question to ask if enough samples have been taken to be able to discern the difference between the observations and some reference. This paper will discuss how to calculate a necessary sample size to be able to determine if the differences identified in the sampling program are significantly different than the specification or reference. In this context a sampling program can take the form of a material property confirmations or ILI digs to verify anomalies. Each property confirmation or anomaly measurement is a sample for this purpose.
+In any type of sampling program it is a natural question to ask if enough samples have been taken to meet some statistical goal. This paper will discuss how to calculate a necessary sample size to be able to determine if the differences identified in the sampling program are significantly different than the specification or reference. In this context a sampling program can take the form of a material property confirmations or ILI digs to verify anomalies. Each material property confirmation or anomaly measurement is a sample for this purpose.
 
-Differences will always exist between the measured value and the true value since there is no such thing as an perfect measurement. Errors of varying magnitude will exist due to random effects from any number of sources, both human and equipment related. The t inevitable question arises is whether these observed differences are enough to be significant and have enough samples been completed to be able to tell the difference. Often tools such as a unity charts are used but even API 1163 refers to these as a qualitative tool. The weakness of unity charts is that they are only a visual representation of what is already known, how many anomalies were within the tolerance limits and what the difference was. It can't tell you what the likelihood that the entire population is within specification. Another scenario is when a series of replicate measurements are taken and because of the random errors inherent in any measuring process, there is scatter to the data even though there is only one true (but unknown) value for the sample, assuming the material property doesn't change from one measurement to the next. Even the average might be off from the expected value. If there is measurement uncertainty how confident can one be in the observed results are representative of reality and have enough samples been taken to reasonably judge whether a standard has been met?
+Differences will always exist between the measured value and the true value since there is no such thing as an perfect measurement. Errors of varying magnitude will exist due to random effects from any number of sources, both human and equipment related. The inevitable question arises is whether these observed differences are large enough to infer  have enough samples been completed to be able to tell if the observed differences could be just due to random chance or if the true value is different than what it was thought to be. Often tools such as a unity charts are used but even API 1163 refers to these as a qualitative tool. The weakness of unity charts is that they are only a visual representation of what is already known, how many anomalies were within the tolerance limits and what the difference was. It can't tell you what the likelihood that the entire population is within specification. Another scenario is when a series of replicate measurements are taken and because of the random errors inherent in any measuring process, there is scatter to the data even though there is only one true (but unknown) value for the sample, assuming the material property doesn't change from one measurement to the next. Even the average might be off from the expected value. If there is measurement uncertainty, how confident can one be in the observed results are representative of reality and have enough samples been taken to reasonably judge whether a standard has been met?
 
-To deal with the uncertainty built into any measuring process and sample variation, it is necessary to delve into the mathematics of probability to make inferences about the remaining population that was not examined. Statistics allows the user to take information from a sample to make inferences about the population.
+To deal with the uncertainty built into any measuring and sampling process, it is necessary to delve into the mathematics of probability to make a judgement about the remaining population based on the information acquired from the sample.
+
+## Sampling Example
+To demonstrate the variability in sampling, consider a scenario of taking samples from a population where the average height and standard deviation are known to be 169 and 8 centimeters respectively. Then 10 people are selected at random and have their height measured and the results averaged. Then this process is repeated 5,000 times,each time taking a new random sample of people. Even though there is only one average height for the entire population, each sample produces a slightly different average and if you plotted the results on a histogram as in @fig-sample_var you would see that over the long-run you would see that you get the characteristic bell-shaped curve of the normal distribution centered on the true average of the population. This shows that if only a single sample was taken and assumed to be the true average it could be off by as much as 6% from the true value. Therefore when a single sample is taken there is going to be uncertainty in what the true average is.
+
+Even though in this scenario, the true average was known and the sampling process was repeated thousands of times, in almost any real scenario the true average is unknown and the ability to repeat the process thousands of times is out of the question. However, these pattern of results are not unique to this example, anytime the process of sampling and averaging is done, the same results (normal distribution centered on the true average) are achieved. This is known as the Central Limit Theorem (CLT). We can use the CLT to our advantage to show the range that the true average probably based on a single sample.
+
+```{r}
+#| label: fig-sample_var
+#| fig-cap: "Sample Variability"
+#| dpi: 300
+
+library(tidyverse)
+library(patchwork)
+library(infer)
+theme_set(theme_minimal())
+set.seed(301)
+
+sampSize <- 10 # size of sample
+nsamps <- 5000 # number of samples we will take
+
+mnh <- 169
+sdh <- 8
+
+pop <- tibble(h =rnorm(1e5, mnh,sdh))
+
+
+adult_samp10 <-
+  rep_sample_n(
+    tbl = pop,
+    size = sampSize,
+    replace = FALSE,
+    reps = nsamps
+  ) %>%
+  summarise(mh = mean(h), sh = sd(h)) %>% 
+  mutate(sampSize = 10)
+
+adult_samp30 <-
+  rep_sample_n(
+    tbl = pop,
+    size = 30,
+    replace = FALSE,
+    reps = nsamps
+  ) %>%
+  summarise(mh = mean(h), sh = sd(h)) %>% 
+  mutate(sampSize = 30)
+
+adult_samp <- bind_rows(adult_samp10, adult_samp30)
+
+mnmx <- adult_samp10 %>%
+  summarise(minh = min(mh)/169, mxh = max(mh)/169)
+
+# pipe the sample Means data frame into ggplot
+
+adult_samp10 %>%
+  mutate(sampSize= paste('n =',sampSize)) %>% 
+  ggplot(aes(mh)) +
+  # create histogram using density rather than count
+  geom_histogram(
+    aes(y = after_stat(density)),
+    bins = 50,
+    col = "gray",
+    fill = "gray"
+  ) +
+  # add a vertical line for the population mean
+  geom_vline(xintercept = mnh,
+             size = 1.5) +
+  # add a label for the line
+  annotate(
+    "text",
+    x = mnh,
+    y = dnorm(mnh, mnh,
+              sdh / sqrt(sampSize)),
+    label = "Population Mean",
+    size = 5,
+    vjust = -0.5,
+    hjust=-0.5,
+    angle = -90
+  ) +
+  # label the x axis
+  labs(x = "Height (cm)",
+       y = NULL) +
+  # add normal based on population mean/sd
+  stat_function(
+    fun = dnorm,
+    args = list(mean = mnh,
+                sd = sdh / sqrt(sampSize)),
+    size = 1.5,
+    color = "black",
+    linetype = 'dotted'
+  ) +
+  # facet_grid(~sampSize) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank())+
+   scale_x_continuous(breaks = seq(160,178,by =2))
+
+```
 
 ## Statistical Tests and Errors
 
@@ -28,16 +124,15 @@ A sampling program is in essence a statistical test. In any statistical test the
 
 In most cases, the desired result is to test whether the results from the sample data are different enough from a given reference or standard or between two samples that it is considered statistically significant. An example of this would be if a several wall thickness measurements are taken and the average is different than the assumed nominal wall thickness. A statistical test would be able to determine if the differences are enough to consider whether it was plausible that the sample could have came from a population with a mean equal to the nominal wall thickness.
 
-In a Null Hypothesis Statistical Test (NHST) there are two possible outcomes. Either the Null Hypothesis (Null) which is your conjecture that you are attempting to disprove or not, (e.g. The mean of Sample A does not significantly differ from Sample B) is rejected or it is not rejected. It is not possible to accept the Null, it is either rejected or not rejected. The reason for this is that true value is unknown since only sample of the population was taken and accepting the Null would require proving an infinite number of alternatives are not possible, i.e. prove an infinite number of negatives. An NHST is similar to a criminal trial where the defendant is pronounced guilty or not guilty, but is never pronounced innocent.
+In a Null Hypothesis Statistical Test (NHST) there are two possible outcomes. Either the Null Hypothesis (Null) which is your conjecture that you are attempting to disprove or not, (e.g., The mean of Sample A does not significantly differ from Sample B) is rejected or it is not rejected. It is not possible to accept the Null, it is either rejected or not rejected. The reason for this is that true value is unknown since only sample of the population was taken and accepting the Null would require proving an infinite number of alternatives, i.e. prove an infinite number of negatives. An NHST is similar to a criminal trial where the defendant is pronounced guilty or not guilty, but is never pronounced innocent.
 
 ## Discussion of Error Types
 
-A Type 1 error is rejecting the Null when it is really true, remembering that the true value is unknown in most real world cases (except in a contrived examples) but we can calculate the likelihood of falsely rejecting the Null. A Type 2 error is failing to reject the Null when it is false, meaning you didn't reject the Null when you should have. The plot in figure \@ref(fig:type12) shows a Type 1 and 2 error. The darker shaded region is the error bounds for $\alpha$ and $\beta$ respectively. For instance, if a testing program is set up and it is decided that if the mean is equal or exceeds the value where the darker shaded ares begins that the the Null $H_0$ is rejected in favor of the alternate hypothesis $H_1$. It can be seen that there is still some possibility that the sample could have came from the Null because the distribution continues on. The potential Type 1 error would be the darker blue area under the curve. If at that same decision point, it was decided to not reject the Null that was false then the potential Type 2 error would be darker orange area.
+A Type 1 error is rejecting the Null when it is really true, remembering that except in a contrived examples the true value is unknown. However, it is possible to calculate the likelihood of falsely rejecting the Null. A Type 2 error is failing to reject the Null when it is false, meaning you didn't reject the Null when you should have. The plot in figure \@ref(fig:type12) shows a Type 1 and 2 error. The darker shaded region is the error bounds for $\alpha$ and $\beta$ respectively. For instance, if a testing program is set up and it is decided that if the mean is equal or exceeds the value where the darker shaded ares begins that the the Null $H_0$ is rejected in favor of the alternate hypothesis $H_1$. It can be seen that there is still some possibility that the sample could have came from the Null because the distribution continues on. The potential Type 1 error would be the darker blue area under the curve. If at that same decision point, it was decided to not reject the Null that was false then the potential Type 2 error would be darker orange area.
 
 ```{r type12, fig.cap="Type 1 & 2 Errors"}
 
-library(tidyverse)
-library(patchwork)
+
 
 label1 <- c("H[0]","H[1]")
 
@@ -69,10 +164,10 @@ typeI <- ggplot(DF, aes(x)) +
     n=301
   ) +
   labs(
-    title = "Type I Error",
+    title = "Type 1 Error",
     x = "z-score",
     y = "Density",
-    caption = "Type I = Reject Null When it is True"
+    caption = "Type 1 = Reject Null When it is True"
   ) +
   scale_x_continuous(limits = c(-3, 5))+
   annotate(geom = "text", x=0, y=0.3, label=deparse(bquote(H[0])), parse=T, size=5)+
@@ -107,10 +202,10 @@ typeII <- ggplot(DF, aes(x)) +
     n=301
   ) +
   labs(
-    title = "Type II Error",
+    title = "Type 2 Error",
     x = "z-score",
     y = "Density",
-    caption = "Type II = Failure to Reject Null When it is False"
+    caption = "Type 2 = Failure to Reject Null When it is False"
   ) +
   scale_x_continuous(limits = c(-3, 5))+
   annotate(geom = "text",
@@ -123,9 +218,11 @@ typeII <- ggplot(DF, aes(x)) +
            label=deparse(bquote(H[0])), parse=T, size=5)
 
 typeI + typeII +
-  plot_annotation(title = "Type I and Type II Error Visualization")
+  plot_annotation(title = "Type 1 and Type 2 Error Visualization")
 
 ```
+
+It is impossible to eliminate all chance of error in a sampling program therefore as part of determining the sample size is the determining the maximum Type 1 and 2 error that can be accepted. The most common is to limit the Type 1 to 5% and the Type 2 to 20%. The reason for this is that a Type 1 error is considered to be more consequential than a Type 2. For instance, if the Null Hypothesis is a disease diagnosis, it would be problematic if a person was diagnosed as not having the disease when they do (Type 1) compared to a positive diagnosis when they don't have it (Type 2).
 
 ## Sample Size
 
@@ -257,7 +354,7 @@ X_L = -0.01- (1.80)(0.09) = -17\% \hspace{12pt} and \hspace{12pt}  X_U = -0.01+ 
 ```
 ## Binary Outcomes {.unnumbered}
 
-In the condition where each sample is a pass/fail, yes/no type of binary outcome then that is modeled with the binomial distribution. This is used to calculate the probability of *k* successes in *n* independent trials if the probability of success per trial is *p*. A "success" is whatever is being counted. A success does not necessarily a positive outcome. The binomial distribution is as follows.
+In the condition where each sample is a pass/fail or yes/no type of binary outcome then that is modeled with the binomial distribution. This is used to calculate the probability of *k* successes in *n* independent trials if the probability of success per trial is *p*. A "success" is whatever is being counted. A success does not necessarily a positive outcome. The binomial distribution is as follows.
 
 $$\binom{n}{k} p^{k} (1 - p)^{n - k}$$
 
